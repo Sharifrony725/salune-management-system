@@ -7,13 +7,29 @@ if (!isset($_SESSION['user_name'])) {
     exit();
 }
 
-if (isset($_SESSION['user_name'])) {
-    echo $_SESSION['user_name'];
-} else {
-    echo "Guest";
+$email = $_SESSION['user_email'];
+// Database connection
+$host = 'localhost';
+$db   = 'slms';
+$user = 'root';
+$pass = '';
+
+// Create connection
+$conn = new mysqli($host, $user, $pass, $db);
+
+// Check the connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
-?>
+        $sql = "SELECT MAX(fullname) as fullname, email,status, SUM(total) as total_sum, MAX(date_created) as last_date
+        FROM appointment_list 
+        WHERE status = '1' AND email= '$email' 
+        GROUP BY email";
+        $result = $conn->query($sql);
+                 
+    ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -97,6 +113,16 @@ if (isset($_SESSION['user_name'])) {
             color: #fff;
         }
 
+        .table tbody tr {
+            background-color: #495057;
+            color: #fff;
+        }
+
+        .table tbody tr td {
+            background-color: lightblue;
+            color: #fff;
+        }
+
         .table tbody tr:hover {
             background-color: #6c757d;
         }
@@ -117,10 +143,8 @@ if (isset($_SESSION['user_name'])) {
     <div class="content">
         <h1>Welcome to <span class="user-name" style="color: violet;">
                 <?php
-                // session_start();
                 if (isset($_SESSION['user_name'])) {
                     echo $_SESSION['user_name'];
-                    // echo $_SESSION['user_email'];
                 } else {
                     echo "Guest";
                 }
@@ -140,24 +164,45 @@ if (isset($_SESSION['user_name'])) {
                         <tr>
                             <th>#</th>
                             <th>Date Created</th>
-                            <th>Service Name</th>
-                            <th>Schedule</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Total Amount</th>
                             <th>Status</th>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>2024-10-07 11:21</td>
-                            <td>Priscilla Moody</td>
-                            <td>Jan 12, 2015</td>
-                            <td><span class="badge bg-warning">Pending</span></td>
-
                         </tr>
-                    </tbody>
+                    </thead>
+                   
+                        <?php if ($result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) { ?>
+                             <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><?php echo $row['last_date']; ?> </td>
+                                <td><?php echo $row['fullname']?></td>
+                                <td><?php echo $row['email']  ?></td>
+                                <td><?php echo $row['total_sum'] ?></td>
+                                <td>
+                                    <?php if ($row['status'] == 1) { ?>
+                                        <span class="badge btn-primary">Verified</span>
+                                    <?php } else { ?>
+                                        <span class="badge bg-warning">
+                                            Pending</span>
+                                    <?php  } ?>
+
+                                </td>
+                            </tr>
+                        </tbody>
+                       <?php }
+                   } else {
+                        echo "No results found.";
+                    } ?>
+                       
                 </table>
+
             </div>
+
         </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
